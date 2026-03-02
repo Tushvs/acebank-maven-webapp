@@ -27,7 +27,8 @@ public interface BankUserDao {
 
     List<Transaction> getStatement(int accountNo) throws SQLException;
 
-    boolean changePassword(int accountNo, String oldPw, String newPw) throws SQLException;
+    // 🔥 UPDATED: only update password (no old password check here)
+    boolean updatePassword(int accountNo, String newHash) throws SQLException;
 
     Optional<AccountRecoveryDTO> getRecoveryDetails(String email) throws SQLException;
 

@@ -5,7 +5,6 @@ import java.io.Serial;
 import java.util.List;
 import java.util.Optional;
 
-
 import com.acebank.lite.dao.BankUserDao;
 import com.acebank.lite.dao.BankUserDaoImpl;
 import com.acebank.lite.models.LoginResult;
@@ -33,53 +32,52 @@ public class Login extends HttpServlet {
 
         String accStr = request.getParameter("accountNumber");
         String password = request.getParameter("password");
-//        String rememberMe = request.getParameter("rememberMe");
 
         try {
             int accountNo = Integer.parseInt(accStr);
 
-            // 1. Authenticate via Service
-            Optional<LoginResult> loginResultOpt = bankService.authenticate(accountNo, password);
-
+            Optional<LoginResult> loginResultOpt =
+                    bankService.authenticate(accountNo, password);
 
             if (loginResultOpt.isPresent()) {
+
                 var details = loginResultOpt.get();
                 HttpSession session = request.getSession(true);
 
-                // 2. Populate Session Attributes
                 session.setAttribute("accountNumber", accountNo);
                 session.setAttribute("firstName", details.firstName());
                 session.setAttribute("lastName", details.lastName());
                 session.setAttribute("email", details.email());
                 session.setAttribute("balance", details.balance());
 
-                // 3. Fetch Transaction History for the Dashboard
-                List<Transaction> statement = userDao.getStatement(accountNo);
+                List<Transaction> statement =
+                        userDao.getStatement(accountNo);
+
                 session.setAttribute("transactionDetailsList", statement);
-
-                // 4. Handle "Remember Me" Cookie
-
 
                 log.info("User " + accountNo + " logged in successfully.");
 
-//                request.getRequestDispatcher("/WEB-INF/views/Home.jsp").forward(request, response);
+                // 🔥 CHANGE HERE
+                // Redirect to summary page instead of full dashboard
+                response.sendRedirect(request.getContextPath() + "/index.jsp");
 
-                // PRG Pattern
-                // REDIRECT: Tells browser "Go to /home using GET"
-                response.sendRedirect(request.getContextPath() + "/home");
             } else {
                 log.warning("Authentication failed for account: " + accStr);
-                response.sendRedirect("LoginFail.jsp");
+                response.sendRedirect(request.getContextPath() + "/Login");
             }
+
         } catch (Exception e) {
-            log.severe("Login Error: \n" + e.getMessage());
-            response.sendRedirect("LoginFail.jsp");
+            log.severe("Login Error: " + e.getMessage());
+            response.sendRedirect(request.getContextPath() + "/Login");
         }
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest request,
+                         HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect("Login.jsp");
+
+        request.getRequestDispatcher("login.jsp")
+                .forward(request, response);
     }
 }

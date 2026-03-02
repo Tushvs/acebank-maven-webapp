@@ -1,7 +1,5 @@
 package com.acebank.lite.service;
 
-
-
 import com.acebank.lite.models.LoginResult;
 import com.acebank.lite.models.ServiceResponse;
 import com.acebank.lite.models.Transaction;
@@ -13,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface BankService {
+
     Optional<LoginResult> authenticate(int accountNo, String password) throws SQLException;
 
     boolean changePassword(int accountNo, String oldPlain, String newPlain) throws SQLException;
@@ -29,7 +28,17 @@ public interface BankService {
 
     Optional<LoginResult> registerUser(User user);
 
-    public boolean recoverAccount(String email);
+    boolean recoverAccount(String email);
 
-    public boolean applyForLoan(String firstName, String email, String loanType);
+    boolean applyForLoan(String firstName, String email, String loanType);
+
+    /**
+     * Applies for a database-backed loan and sends confirmation email.
+     */
+    void applyLoan(int accountNumber,
+                   String fullName,
+                   String email,
+                   String aadhaar,
+                   String pan,
+                   double amount) throws Exception;
 }

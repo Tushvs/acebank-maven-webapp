@@ -8,35 +8,61 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 
-// This defines the "Restricted Area." Any request to /home, /Withdraw, or /Transfer must pass through this guard first.
-@WebFilter(urlPatterns = {"/home", "/Withdraw", "/Transfer", "/getStatement", "/WEB-INF/views/*"})
+/*
+   AuthFilter acts as a security guard.
+   Any protected URL must pass through this filter.
+*/
+
+@WebFilter(urlPatterns = {
+        "/home",
+        "/Withdraw",
+        "/Transfer",
+        "/getStatement",
+        "/ApplyLoan",
+        "/loan.jsp"
+})
 public class AuthFilter implements Filter {
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+    public void doFilter(ServletRequest request,
+                         ServletResponse response,
+                         FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
-//        The false parameter is crucial. It tells Tomcat: "If a session already exists, give it to me. If not, do not create a new one."
+        String uri = httpRequest.getRequestURI();
+
+        // Allow static resources without authentication
+        if (uri.contains("/assets/") ||
+                uri.contains(".css") ||
+                uri.contains(".js") ||
+                uri.contains(".png") ||
+                uri.contains(".jpg") ||
+                uri.contains(".svg")) {
+
+            chain.doFilter(request, response);
+            return;
+        }
+
+        // Do NOT create new session
         HttpSession session = httpRequest.getSession(false);
 
-        // Check if the user is logged in
-        boolean isLoggedIn = (session != null && session.getAttribute("accountNumber") != null);
+        boolean isLoggedIn =
+                (session != null && session.getAttribute("accountNumber") != null);
 
         if (isLoggedIn) {
-            // User is authenticated, pass the request along the chain
             chain.doFilter(request, response);
         } else {
-            // User is not logged in, kick them back to the login page
-            // We use a query param so the Login page can show a "Please login first" message
-            httpResponse.sendRedirect("login.jsp?error=unauthorized");
+            httpResponse.sendRedirect(
+                    httpRequest.getContextPath() + "/Login"
+            );
         }
     }
 
     @Override
-    public void init(FilterConfig filterConfig) throws ServletException {
+    public void init(FilterConfig filterConfig) {
     }
 
     @Override
