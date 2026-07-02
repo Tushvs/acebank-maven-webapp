@@ -31,3 +31,15 @@ CREATE TABLE IF NOT EXISTS TRANSACTIONS (
     CREATED_AT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (SENDER_ACCOUNT) REFERENCES ACCOUNTS(ACCOUNT_NO)
     );
+
+-- PERFORMANCE INDEXES
+-- Without this, "WHERE SENDER_ACCOUNT = ? OR RECEIVER_ACCOUNT = ?" (account statement query)
+-- forces a full table scan whenever it needs to match on RECEIVER_ACCOUNT, since only
+-- SENDER_ACCOUNT has an implicit index (from its FK constraint).
+-- Note: plain CREATE INDEX (no IF NOT EXISTS) for compatibility with standard MySQL.
+-- This script is meant to run once against a fresh schema. If you re-run it against
+-- an existing DB, drop these two indexes first or guard with a check.
+CREATE INDEX idx_receiver_account ON TRANSACTIONS(RECEIVER_ACCOUNT);
+
+-- Speeds up the daily withdrawal total lookup (SENDER_ACCOUNT + TX_TYPE + date range).
+CREATE INDEX idx_sender_type_created ON TRANSACTIONS(SENDER_ACCOUNT, TX_TYPE, CREATED_AT);

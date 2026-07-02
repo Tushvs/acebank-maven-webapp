@@ -56,11 +56,16 @@ transaction:
 
   statement: "SELECT * FROM TRANSACTIONS WHERE SENDER_ACCOUNT = ? OR RECEIVER_ACCOUNT = ? ORDER BY CREATED_AT DESC"
 
+  # Rewritten to a sargable range condition (was DATE(CREATED_AT) = CURDATE(), which
+  # can't use an index because the function wraps the column). This lets MySQL use
+  # idx_sender_type_created for a direct index range scan instead of scanning every
+  # matching SENDER_ACCOUNT row and evaluating DATE() on each.
   get_daily_withdrawal_total: >
     SELECT SUM(AMOUNT) FROM TRANSACTIONS 
     WHERE SENDER_ACCOUNT = ? 
     AND TX_TYPE = 'WITHDRAWAL' 
-    AND DATE(CREATED_AT) = CURDATE()
+    AND CREATED_AT >= CURDATE() 
+    AND CREATED_AT < CURDATE() + INTERVAL 1 DAY
 
   log_withdrawal: >
     INSERT INTO TRANSACTIONS (SENDER_ACCOUNT, RECEIVER_ACCOUNT, AMOUNT, TX_TYPE, REMARK) 
